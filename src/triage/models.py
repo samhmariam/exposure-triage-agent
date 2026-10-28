@@ -6,6 +6,7 @@ comparators (stage 5), so these models validate structure only, never `start <= 
 
 from enum import StrEnum
 from typing import Annotated, Self
+from urllib.parse import unquote
 
 from pydantic import (
     AfterValidator,
@@ -14,6 +15,7 @@ from pydantic import (
     ConfigDict,
     Field,
     HttpUrl,
+    StrictBool,
     model_validator,
 )
 
@@ -25,10 +27,47 @@ def _reject_blank(value: str) -> str:
     return value
 
 
+def _require_digit(value: str) -> str:
+    if not any(c.isdigit() for c in value):
+        raise ValueError("a version must contain a digit")
+    return value
+
+
+def _strip_purl_suffixes(purl: str) -> str:
+    """Drop the `#subpath` and `?qualifiers` parts of a purl."""
+    return purl.split("#", 1)[0].split("?", 1)[0]
+
+
+def purl_version(purl: str) -> str | None:
+    """The decoded version of a purl, or None if it has none.
+
+    A raw `@` only ever separates the version: scoped npm names encode theirs as `%40`.
+    """
+    _, sep, version = _strip_purl_suffixes(purl).rpartition("@")
+    return unquote(version) if sep else None
+
+
+def purl_package(purl: str) -> str:
+    """A purl reduced to package identity: no version, qualifiers or subpath."""
+    return _strip_purl_suffixes(purl).split("@", 1)[0]
+
+
+def _reject_purl_version(value: str) -> str:
+    if purl_version(value) is not None:
+        raise ValueError("must identify the package only, without an @version")
+    return value
+
+
 NonBlankStr = Annotated[str, Field(min_length=1), AfterValidator(_reject_blank)]
 CveId = Annotated[str, Field(pattern=r"^CVE-\d{4}-\d{4,}$")]
 # Shape check only (pkg:<type>/<name>...); full purl parsing belongs to normalisation.
 Purl = Annotated[str, Field(pattern=r"^pkg:[a-z][a-z0-9.+-]*/\S+$")]
+PackagePurl = Annotated[Purl, AfterValidator(_reject_purl_version)]
+# One version token, never an expression: no spaces, commas or leading operators (< >= ^ ~).
+# `~` and `:` are allowed after the first character for Debian (1.0~rc1, 1:2.0).
+VersionStr = Annotated[
+    str, Field(pattern=r"^[0-9A-Za-z][0-9A-Za-z.+:~_-]*$"), AfterValidator(_require_digit)
+]
 
 
 class _Model(BaseModel):
@@ -75,17 +114,17 @@ class AffectedRange(_Model):
     """Vendor or project name as written in the advisory."""
     product: NonBlankStr
     """Product name as written in the advisory."""
-    purl: Purl | None = None
-    """Package identity (version-less purl), filled in during normalisation; None until mapped."""
-    version_start: str | None = None
-    """Lower bound of the range; None means open below. Raw string, compared only by stage 5."""
-    version_end: str | None = None
-    """Upper bound of the range; None means open above. Raw string, compared only by stage 5."""
-    start_inclusive: bool = True
-    """Whether `version_start` itself is affected. Ignored when the lower side is open."""
-    end_inclusive: bool = False
-    """Whether `version_end` itself is affected. Ignored when the upper side is open."""
-    all_versions: bool = False
+    purl: PackagePurl | None = None
+    """Package identity (purl without @version), set during normalisation; None until mapped."""
+    version_start: VersionStr | None
+    """Lower bound; required key, null means open below. Compared only by stage 5."""
+    version_end: VersionStr | None
+    """Upper bound; required key, null means open above. Compared only by stage 5."""
+    start_inclusive: StrictBool | None = None
+    """Whether `version_start` itself is affected; required when it is set, null when open."""
+    end_inclusive: StrictBool | None = None
+    """Whether `version_end` itself is affected; required when it is set, null when open."""
+    all_versions: StrictBool = False
     """Explicit claim that every version is affected; required for a range with no bounds."""
     evidence_quote: NonBlankStr
     """Verbatim advisory text supporting this range; kept unmodified for citation checks."""
@@ -93,12 +132,25 @@ class AffectedRange(_Model):
     """URL of the advisory the quote was taken from."""
 
     @model_validator(mode="after")
-    def _bounds_match_all_versions(self) -> Self:
+    def _bounds_are_consistent(self) -> Self:
         has_bound = self.version_start is not None or self.version_end is not None
         if self.all_versions and has_bound:
             raise ValueError("all_versions=True must not set version_start or version_end")
         if not self.all_versions and not has_bound:
             raise ValueError("a range with no bounds must set all_versions=True explicitly")
+        for side in ("start", "end"):
+            bound, flag = getattr(self, f"version_{side}"), getattr(self, f"{side}_inclusive")
+            if bound is not None and flag is None:
+                raise ValueError(f"version_{side} is set, so {side}_inclusive is required")
+            if bound is None and flag is not None:
+                raise ValueError(f"version_{side} is open, so {side}_inclusive must be null")
+        # Identical strings only: equivalence such as 1.0 == 1.0.0 needs stage-5 comparators.
+        same = self.version_start is not None and self.version_start == self.version_end
+        if same and not (self.start_inclusive and self.end_inclusive):
+            raise ValueError(
+                "version_start == version_end needs start_inclusive and end_inclusive "
+                "both true, otherwise the range is empty"
+            )
         return self
 
 
@@ -140,6 +192,13 @@ class Component(_Model):
     purl: Purl
     """Package URL identifying the package (and usually its version) across ecosystems."""
 
+    @model_validator(mode="after")
+    def _purl_version_matches(self) -> Self:
+        in_purl = purl_version(self.purl)
+        if in_purl is not None and in_purl != self.version:
+            raise ValueError(f"purl version {in_purl!r} does not match version {self.version!r}")
+        return self
+
 
 class Finding(_Model):
     """The match result for one component on one asset against one CVE."""
@@ -157,12 +216,19 @@ class Finding(_Model):
     reason: NonBlankStr
     """Human-readable explanation of the verdict."""
     affected_range: AffectedRange | None = None
-    """The cited range that produced the verdict; required when status is affected."""
+    """The cited range behind the verdict; required unless status is not_affected."""
 
     @model_validator(mode="after")
-    def _affected_needs_range(self) -> Self:
-        if self.status is FindingStatus.AFFECTED and self.affected_range is None:
-            raise ValueError("an affected finding must cite its affected_range")
+    def _verdict_cites_matching_range(self) -> Self:
+        if self.affected_range is None:
+            if self.status is not FindingStatus.NOT_AFFECTED:
+                raise ValueError(f"a {self.status} finding must cite its affected_range")
+            return self
+        range_purl = self.affected_range.purl
+        if range_purl is not None and purl_package(range_purl) != purl_package(self.component.purl):
+            raise ValueError(
+                f"affected_range is for {range_purl!r}, not component {self.component.purl!r}"
+            )
         return self
 
 

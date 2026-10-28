@@ -13,6 +13,16 @@ Template:
 
 ---
 
+## 2026-10-28: Property tests found 9 silent acceptances
+
+- Hypothesis, fed LLM-shaped mistakes, found 9 malformed inputs the models accepted. The worst
+  were silent defaults: a dropped bound key became an open range, and a dropped inclusive flag
+  took its default.
+- Fix pattern: make "absent" and "null" mean different things (required-but-nullable fields), so
+  the LLM must state "open" on purpose.
+- Every tightening needs a matching "still accepts real data" test (Debian epochs, scoped npm,
+  purl qualifiers). Otherwise strictness turns into false rejections.
+
 ## 2026-10-28: Domain models as a trust boundary
 
 - Models are the first check on LLM output: `extra="forbid"` rejects invented fields, and the

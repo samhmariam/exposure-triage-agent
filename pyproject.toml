@@ -14,7 +14,11 @@ build-backend = "uv_build"
 module-name = "triage"
 
 [dependency-groups]
-dev = ["pytest>=8", "ruff>=0.6"]
+dev = [
+    "hypothesis>=6.170.13",
+    "pytest>=8",
+    "ruff>=0.6",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -33,6 +33,17 @@ def range_kwargs(**overrides):
     return kwargs
 
 
+def all_versions_kwargs(**overrides):
+    open_bounds = {
+        "version_start": None,
+        "version_end": None,
+        "start_inclusive": None,
+        "end_inclusive": None,
+        "all_versions": True,
+    }
+    return range_kwargs(**{**open_bounds, **overrides})
+
+
 def component_kwargs(**overrides):
     kwargs = {"name": "lodash", "version": "4.17.20", "purl": "pkg:npm/lodash@4.17.20"}
     kwargs.update(overrides)
@@ -150,35 +161,81 @@ def test_enums_accept_their_string_values():
 
 
 def test_range_open_upper_bound():
-    r = AffectedRange(**range_kwargs(version_start="2.0.0", version_end=None))
+    r = AffectedRange(**range_kwargs(version_start="2.0.0", version_end=None, end_inclusive=None))
     assert r.version_start == "2.0.0"
     assert r.version_end is None
 
 
 def test_range_open_lower_bound():
-    r = AffectedRange(**range_kwargs(version_start=None, version_end="4.17.21"))
+    r = AffectedRange(
+        **range_kwargs(version_start=None, version_end="4.17.21", start_inclusive=None)
+    )
     assert r.version_start is None
     assert r.version_end == "4.17.21"
 
 
 def test_range_with_no_bounds_requires_all_versions_flag():
     with pytest.raises(ValidationError, match="all_versions"):
-        AffectedRange(**range_kwargs(version_start=None, version_end=None))
+        AffectedRange(**all_versions_kwargs(all_versions=False))
 
 
 def test_range_all_versions_with_no_bounds():
-    r = AffectedRange(**range_kwargs(version_start=None, version_end=None, all_versions=True))
-    assert r.all_versions
+    assert AffectedRange(**all_versions_kwargs()).all_versions
 
 
 @pytest.mark.parametrize(
-    "bounds", [{"version_start": "1.0.0", "version_end": None}, {"version_end": "2.0.0"}]
+    "bounds",
+    [
+        {"version_start": "1.0.0", "start_inclusive": True},
+        {"version_end": "2.0.0", "end_inclusive": False},
+    ],
 )
 def test_range_all_versions_rejects_bounds(bounds):
-    kwargs = range_kwargs(version_start=None, version_end=None, all_versions=True)
-    kwargs.update(bounds)
     with pytest.raises(ValidationError, match="all_versions"):
-        AffectedRange(**kwargs)
+        AffectedRange(**all_versions_kwargs(**bounds))
+
+
+def test_open_side_must_not_carry_inclusive_flag():
+    with pytest.raises(ValidationError, match="end_inclusive must be null"):
+        AffectedRange(**range_kwargs(version_end=None, end_inclusive=True))
+
+
+def test_single_version_range_is_accepted():
+    r = AffectedRange(**range_kwargs(version_start="3.0.6", version_end="3.0.6"))
+    assert r.version_start == r.version_end
+
+
+# --- legitimate tricky inputs the stricter validators must still accept ---
+
+
+@pytest.mark.parametrize("version", ["1:2.0~rc1-1", "2.0.0-beta.1+build.5", "1.1.1t", "2024_01"])
+def test_real_world_version_formats_are_accepted(version):
+    assert AffectedRange(**range_kwargs(version_end=version)).version_end == version
+
+
+@pytest.mark.parametrize(
+    ("version", "purl"),
+    [
+        ("1.0.0", "pkg:npm/%40angular/core@1.0.0"),
+        ("1:3.0.11-1", "pkg:deb/debian/openssl@1%3A3.0.11-1?arch=amd64"),
+        ("2.31.0", "pkg:pypi/requests@2.31.0#src"),
+        ("1.0", "pkg:generic/tool"),
+    ],
+)
+def test_component_purl_forms_are_accepted(version, purl):
+    Component(name="pkg", version=version, purl=purl)
+
+
+def test_range_purl_matches_component_despite_qualifiers():
+    component = Component(
+        name="openssl", version="1:3.0.11-1", purl="pkg:deb/debian/openssl@1%3A3.0.11-1?arch=amd64"
+    )
+    affected = AffectedRange(**range_kwargs(purl="pkg:deb/debian/openssl"))
+    Finding(**finding_kwargs(component=component, affected_range=affected))
+
+
+def test_scoped_npm_range_purl_is_not_mistaken_for_versioned():
+    assert AffectedRange(**range_kwargs(purl="pkg:npm/%40angular/core")).purl
 
 
 # --- JSON round-trips ---
@@ -188,7 +245,7 @@ def test_range_all_versions_rejects_bounds(bounds):
     ("model", "kwargs"),
     [
         (AffectedRange, range_kwargs()),
-        (AffectedRange, range_kwargs(version_start=None, version_end=None, all_versions=True)),
+        (AffectedRange, all_versions_kwargs()),
         (Cve, cve_kwargs()),
         (Cve, cve_kwargs(cvss_base_score=None, epss_score=None, affected_ranges=[])),
         (Asset, asset_kwargs()),
