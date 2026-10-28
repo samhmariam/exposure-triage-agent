@@ -13,6 +13,15 @@ Template:
 
 ---
 
+## 2026-10-28: Domain models as a trust boundary
+
+- Models are the first check on LLM output: `extra="forbid"` rejects invented fields, and the
+  required `evidence_quote` + `source_url` make "every claim cites evidence" structural.
+- A range with no bounds must say `all_versions=True` explicitly, so a dropped bound can't
+  silently mean "everything".
+- Models deliberately don't check `start <= end`: that needs ecosystem comparators, and a string
+  comparison here would be the exact bug the matching stage exists to avoid.
+
 ## 2026-10-28: Agent fundamentals and pipeline design
 
 - **The agent loop:** the model proposes tool calls; the harness checks permissions and runs them.
