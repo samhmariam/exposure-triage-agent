@@ -13,6 +13,13 @@ Template:
 
 ---
 
+## 2026-10-28: Principle: typed contracts at the boundary
+
+- Every model output must parse into typed contracts, so bad output fails at the boundary, not downstream.
+- Example (P1): an LLM that dropped `version_start` from "3.0.0 through 3.0.6" would have silently
+  produced an open-ended range, flagging every older version with no error anywhere. Now
+  `version_start` is a required key, so the output fails validation at extraction.
+
 ## 2026-10-28: Property tests found 9 silent acceptances
 
 - Hypothesis, fed LLM-shaped mistakes, found 9 malformed inputs the models accepted. The worst
