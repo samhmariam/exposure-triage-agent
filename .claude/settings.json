@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./evals/answers/**)",
+      "Grep(./evals/answers/**)",
+      "Glob(./evals/answers/**)"
+    ]
+  }
+}

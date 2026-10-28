@@ -1,0 +1,37 @@
+# Learning log
+
+Dated notes on what I learned while building the exposure triage agent. Newest first.
+
+Template:
+
+```
+## YYYY-MM-DD: <topic>
+- What I learned
+- What surprised me / what I got wrong
+- What I'll do differently
+```
+
+---
+
+## 2026-10-28: Agent fundamentals and pipeline design
+
+- **The agent loop:** the model proposes tool calls; the harness checks permissions and runs them.
+  The model only knows what is in its context window, so it must read before it edits.
+- **Context loss:** early chat instructions can be compacted away or diluted. Durable rules go in
+  `CLAUDE.md`; rules that must never be broken go in harness permissions/hooks, because a model can
+  forget an instruction but cannot get past a deny rule.
+- **LLM vs code:** use an LLM for unstructured language (extracting from advisories) and open-ended
+  work (drafting fixes). Use deterministic code wherever there is a computable right answer
+  (ingest, matching, scoring, verification).
+- **A quote existing is not the quote agreeing:** a citation can be genuine while the extracted
+  range is wrong ("3.0.0 through 3.0.6" → `< 3.0.7` drops the lower bound). Validation must check
+  both.
+- **Version comparison is not string comparison:** `1.10` > `1.9`; Debian `1:2.0` > `3.0`;
+  `2.0.0rc1` < `2.0.0`. At estate scale, an LLM also silently drops items, causing false negatives.
+- **Least privilege for the fix agent:** grant read/edit/test/push-branch/open-PR and registry-only
+  network. Deny merge, approve, push to main, CI-config edits, secrets, arbitrary network.
+  Advisory text is untrusted input and a prompt-injection vector.
+- **Verification:** "Fixed" is a claim. Prove it by rebuilding, regenerating the SBOM (including
+  transitive dependencies), re-matching, and checking the *deployed* artifact, not just `main`.
+- **What I'll do differently:** after each answer, ask "what's the concrete example?" and "what
+  else could go wrong?"

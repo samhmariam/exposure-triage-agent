@@ -1,0 +1,32 @@
+[project]
+name = "exposure-triage-agent"
+version = "0.1.0"
+description = "Triage high-risk CVEs against lab-estate SBOMs, with cited evidence and human-approved fix PRs."
+readme = "CLAUDE.md"
+requires-python = ">=3.12,<3.13"
+dependencies = ["pydantic>=2.7,<3"]
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "triage"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "ANN", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN"]
