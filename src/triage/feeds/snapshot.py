@@ -48,6 +48,8 @@ class Snapshot(BaseModel):
     """When the fetch started (UTC)."""
     responses: tuple[RawResponse, ...]
     """The responses, in request order."""
+    missing: tuple[str, ...] = ()
+    """Requested items the source answered 404 for, e.g. CVE IDs without a record."""
 
 
 def _sha256(text: str) -> str:
@@ -65,6 +67,7 @@ def write_snapshot(
     responses: Sequence[HttpResponse],
     *,
     forced: bool = False,
+    missing: Sequence[str] = (),
 ) -> Path:
     utc = fetched_at.astimezone(UTC)
     name = f"{utc:%Y-%m-%dT%H%M%SZ}.json" if forced else f"{utc:%Y-%m-%d}.json"
@@ -78,6 +81,7 @@ def write_snapshot(
             RawResponse(url=r.url, status_code=r.status_code, sha256=_sha256(r.text), body=r.text)
             for r in responses
         ),
+        missing=tuple(missing),
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".json.tmp")

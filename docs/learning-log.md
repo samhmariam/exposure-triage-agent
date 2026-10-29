@@ -13,6 +13,20 @@ Template:
 
 ---
 
+## 2026-10-29: CVE records for KEV, and how much structure they carry
+
+- Real coverage over all 1,762 KEV CVEs (CNA `affected` only): 845 (48%) have usable version data,
+  418 (24%) name a product only, and 499 (28%) carry nothing. All 499 are `vendor: "n/a"`,
+  `product: "n/a"`, mostly MITRE-assigned (295), then Microsoft (90) and Adobe (48). No 404s and no
+  rejected records.
+- "Has a `versions` array" is not "has versions". Log4Shell's real ranges live only in `changes[]`
+  (its `lessThan` is `"log4j-core*"`), and Microsoft's CVE-2017-0144 puts a whole sentence in `version`.
+  Reusing the `VersionStr` shape check caught both. My plan's example had Log4Shell wrong until I
+  looked at the recorded fixture.
+- Coverage is classified at report time from stored raw JSON, so tuning the rules costs no re-download.
+- DuckDB allows one writer: an open DuckDB UI made a 4.5-minute refresh fail at the very last step.
+  The snapshot was already saved, so a re-run reuses it with no network calls.
+
 ## 2026-10-29: First feeds (KEV + EPSS)
 
 - Profile the real data before choosing strictness: the live KEV had 175 entries with empty `cwes`,

@@ -63,3 +63,16 @@ def test_latest_for_picks_newest_snapshot_of_the_day(tmp_path):
     write_snapshot(tmp_path, "epss", later.replace(hour=16), [RESPONSE], forced=True)
     assert latest_for(tmp_path, "kev", date(2026, 10, 29)) == forced
     assert latest_for(tmp_path, "kev", date(2026, 10, 30)) is None
+
+
+def test_missing_ids_are_recorded(tmp_path):
+    path = write_snapshot(tmp_path, "cve", FETCHED, [RESPONSE], missing=["CVE-1999-0001"])
+    assert read_snapshot(path).missing == ("CVE-1999-0001",)
+
+
+def test_snapshots_without_missing_field_still_read(tmp_path):
+    path = write_snapshot(tmp_path, "kev", FETCHED, [RESPONSE])
+    envelope = json.loads(path.read_text(encoding="utf-8"))
+    del envelope["missing"]
+    path.write_text(json.dumps(envelope), encoding="utf-8")
+    assert read_snapshot(path).missing == ()

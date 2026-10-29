@@ -3,13 +3,16 @@
 Timestamps are stored as naive UTC TIMESTAMPs and returned timezone-aware.
 """
 
+import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
 
 import duckdb
+from pydantic import JsonValue
 
+from triage.feeds.cve_records import Coverage, CveRecord, classify
 from triage.feeds.epss import EpssScore
 from triage.feeds.kev import KevCatalog
 
@@ -49,6 +52,18 @@ CREATE TABLE IF NOT EXISTS epss (
     raw_path VARCHAR NOT NULL,
     PRIMARY KEY (cve_id, raw_path)
 );
+CREATE TABLE IF NOT EXISTS cve_records (
+    cve_id VARCHAR NOT NULL,
+    state VARCHAR NOT NULL,
+    assigner VARCHAR,
+    date_updated TIMESTAMP,
+    descriptions JSON NOT NULL,
+    refs JSON NOT NULL,
+    affected JSON NOT NULL,
+    fetched_at TIMESTAMP NOT NULL,
+    raw_path VARCHAR NOT NULL,
+    PRIMARY KEY (cve_id, raw_path)
+);
 """
 
 
@@ -63,6 +78,15 @@ class FeedStats:
     epss_covered: int
     epss_score_date: date | None
     epss_fetched_at: datetime | None
+
+
+@dataclass(frozen=True)
+class CoverageReport:
+    """How the latest KEV snapshot's CVEs split into coverage buckets."""
+
+    kev_count: int
+    cve_raw_path: str
+    counts: dict[Coverage, int]
 
 
 def connect(path: Path) -> duckdb.DuckDBPyConnection:
@@ -142,6 +166,34 @@ def load_epss(
     return _replace_snapshot(con, "epss", "epss", raw_path, fetched_at, rows, None)
 
 
+def _json(parts: Sequence[JsonValue]) -> str:
+    return json.dumps(list(parts), ensure_ascii=False)
+
+
+def load_cve_records(
+    con: duckdb.DuckDBPyConnection,
+    records: Sequence[CveRecord],
+    raw_path: str,
+    fetched_at: datetime,
+) -> int:
+    ts = _naive_utc(fetched_at)
+    rows: list[tuple[object, ...]] = [
+        (
+            r.cve_metadata.cve_id,
+            r.cve_metadata.state,
+            r.cve_metadata.assigner_short_name,
+            _naive_utc(r.cve_metadata.date_updated) if r.cve_metadata.date_updated else None,
+            _json(r.containers.cna.descriptions),
+            _json(r.containers.cna.references),
+            _json(r.containers.cna.affected),
+            ts,
+            raw_path,
+        )
+        for r in records
+    ]
+    return _replace_snapshot(con, "cve_records", "cve", raw_path, fetched_at, rows, None)
+
+
 def _latest(con: duckdb.DuckDBPyConnection, source: str) -> tuple[str, datetime, str | None] | None:
     return con.execute(
         "SELECT raw_path, fetched_at, catalog_version FROM snapshots WHERE source = ? "
@@ -179,3 +231,22 @@ def feed_stats(con: duckdb.DuckDBPyConnection) -> FeedStats | None:
         epss_score_date=score_date,
         epss_fetched_at=epss_fetched.replace(tzinfo=UTC) if epss_fetched else None,
     )
+
+
+def cve_coverage(con: duckdb.DuckDBPyConnection) -> CoverageReport | None:
+    """Bucket every CVE of the latest KEV snapshot by the latest CVE-record snapshot.
+
+    None if either snapshot is missing. A KEV CVE without a record row counts as NO_RECORD.
+    """
+    kev, cve = _latest(con, "kev"), _latest(con, "cve")
+    if kev is None or cve is None:
+        return None
+    rows = con.execute(
+        "SELECT c.state, c.affected FROM kev k "
+        "LEFT JOIN cve_records c ON c.cve_id = k.cve_id AND c.raw_path = ? WHERE k.raw_path = ?",
+        [cve[0], kev[0]],
+    ).fetchall()
+    counts = dict.fromkeys(Coverage, 0)
+    for state, affected in rows:
+        counts[classify(state, json.loads(affected) if affected is not None else None)] += 1
+    return CoverageReport(kev_count=len(rows), cve_raw_path=cve[0], counts=counts)

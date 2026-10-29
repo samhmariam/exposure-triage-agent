@@ -38,7 +38,8 @@ exposure) is worse than a false positive.
 - Tests: `uv run pytest`
 - Lint: `uv run ruff check`
 - Format: `uv run ruff format`
-- Feeds: `uv run triage feeds refresh [--force]` (network: CISA KEV + FIRST EPSS), `uv run triage feeds stats`
+- Feeds: `uv run triage feeds refresh [--force]` (network: CISA KEV + FIRST EPSS + CVE records),
+  `uv run triage feeds stats`, `uv run triage feeds coverage`
 
 Run tests and lint before declaring any task done.
 

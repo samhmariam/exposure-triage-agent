@@ -17,3 +17,14 @@ recorded once and trimmed. Edit them only by re-recording, and update this file 
 - Recorded: 2026-10-29 (scores dated 2026-10-28)
 - **CVE-2017-0144 deliberately removed** and `total` changed from 5 to 4, so the fixtures have
   EPSS coverage of 4/5 and tests exercise a KEV CVE with no score.
+
+## cve/<CVE-ID>.json
+
+- Source: `https://cveawg.mitre.org/api/cve/<CVE-ID>` for each of the 5 KEV fixture CVEs
+- Recorded: 2026-10-29, through `triage.http.HttpClient`
+- **Verbatim response bodies, not trimmed or edited.** Coverage buckets of the real records: four
+  `version_ranges` and one `product_only` (CVE-2017-0144, whose `version` field is a sentence).
+  The other buckets (`nothing`, `rejected`, `no_record`) and the injection case are built inside the
+  tests from copies, so these files stay real.
+- Worth knowing: Log4Shell (CVE-2021-44228) states its ranges in `changes[]`, and its `lessThan`
+  is the non-version `"log4j-core*"`.
