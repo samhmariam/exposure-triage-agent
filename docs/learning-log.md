@@ -13,6 +13,18 @@ Template:
 
 ---
 
+## 2026-10-29: First feeds (KEV + EPSS)
+
+- Profile the real data before choosing strictness: the live KEV had 175 entries with empty `cwes`,
+  which a "non-empty" rule would have rejected.
+- Strictness depends on the source. LLM output gets `extra="forbid"`, because unknown keys mean the
+  model drifted. Third-party feeds get `extra="ignore"`, because they grow (CISA added `forensicTriage`).
+  Required fields stay strict in both.
+- Integrity checks that need no domain knowledge are cheap wins: KEV `count` must equal the number of
+  entries received (catches truncation), and snapshot `sha256` must match the body (catches edits).
+- "Only one module may do X" is enforced by ruff TID251 and a socket-blocking test fixture, not by a
+  comment.
+
 ## 2026-10-28: Principle: typed contracts at the boundary
 
 - Every model output must parse into typed contracts, so bad output fails at the boundary, not downstream.

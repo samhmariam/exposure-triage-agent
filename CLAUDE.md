@@ -38,6 +38,7 @@ exposure) is worse than a false positive.
 - Tests: `uv run pytest`
 - Lint: `uv run ruff check`
 - Format: `uv run ruff format`
+- Feeds: `uv run triage feeds refresh [--force]` (network: CISA KEV + FIRST EPSS), `uv run triage feeds stats`
 
 Run tests and lint before declaring any task done.
 
@@ -46,6 +47,10 @@ Run tests and lint before declaring any task done.
 - Fully typed: annotate every function signature; no untyped public APIs.
 - Pydantic v2 models for all data crossing a stage boundary (`model_validate`, not v1 APIs).
 - Small pure functions; push I/O (network, disk, model calls) to the edges.
+- All network calls go through `triage.http.HttpClient` (enforced by ruff TID251). Tests never use
+  the network (`tests/conftest.py` blocks sockets); use recorded fixtures in `tests/fixtures/`.
+- Raw feed snapshots in `data/raw/` are evidence: never overwrite or edit them. `data/` is gitignored.
+- Feed models use `extra="ignore"` (feeds add fields over time); LLM-output models use `"forbid"`.
 - Tests first: write a failing test, then the code. Edge cases for version comparison are
   mandatory test fixtures.
 - Record significant design decisions as a new ADR in `docs/adr/`.

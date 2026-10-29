@@ -4,7 +4,14 @@ version = "0.1.0"
 description = "Triage high-risk CVEs against lab-estate SBOMs, with cited evidence and human-approved fix PRs."
 readme = "CLAUDE.md"
 requires-python = ">=3.12,<3.13"
-dependencies = ["pydantic>=2.7,<3"]
+dependencies = [
+    "duckdb>=2.0.0,<3",
+    "httpx>=0.28.1,<1",
+    "pydantic>=2.7,<3",
+]
+
+[project.scripts]
+triage = "triage.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.12,<0.13"]
@@ -30,7 +37,14 @@ line-length = 100
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "ANN", "RUF"]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "ANN", "RUF", "TID"]
+
+# All network access goes through src/triage/http.py (timeouts, retries, backoff).
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"httpx".msg = "Network calls go through triage.http.HttpClient."
+"urllib.request".msg = "Network calls go through triage.http.HttpClient."
+"requests".msg = "Network calls go through triage.http.HttpClient."
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["ANN"]
+"src/triage/http.py" = ["TID251"]
+"tests/**" = ["ANN", "TID251"]
