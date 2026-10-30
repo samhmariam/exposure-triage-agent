@@ -13,6 +13,21 @@ Template:
 
 ---
 
+## 2026-10-30: Claude Code hooks
+
+- PreToolUse blocks (exit 2, stderr goes back to Claude); PostToolUse can't undo anything but feeds
+  back failures. That's enough to make "lint and test after every edit" happen automatically: the hook
+  caught over-long lines in its own test file before I'd run anything.
+- My first protection hook **silently allowed** the edit it was meant to block. On Windows
+  `os.path.normcase` turns `/` into `\`, so `"lab/PLANTED.md"` never matched. A guard that fails
+  open looks exactly like a guard that works until you try to get past it. Every guard now has
+  tests, including a case that must be blocked.
+- Hooks load from a snapshot. The first test edit went through before the new hooks were active, so
+  demonstrate a guard *after* confirming it's live.
+- The Bash guard is textual. It blocks accidents (`sed -i`, `cat evals/answers/...`) but not
+  deliberate obfuscation; the sha256 check on snapshots and a human-owned answer key remain the
+  backstops.
+
 ## 2026-10-30: Lab estate and SBOMs
 
 - Syft saw every planted component, including two that exist only as compiled binaries (httpd,
