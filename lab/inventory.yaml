@@ -1,0 +1,95 @@
+# Lab asset inventory: one asset per service in lab/docker-compose.yml.
+#
+# exposure:    internet | internal   (the MODELLED exposure used for ranking practice;
+#                                     every service really binds to 127.0.0.1 only)
+# criticality: 1 (low) | 2 (medium) | 3 (high)
+#
+# Mapping to triage.models (for the future inventory loader):
+#   exposure    internet -> Exposure.INTERNET_FACING, internal -> Exposure.INTERNAL
+#   criticality 1 -> Criticality.LOW, 2 -> MEDIUM, 3 -> HIGH
+#   (Exposure.ISOLATED and Criticality.CRITICAL are not used in the lab.)
+
+assets:
+  # benign
+  - id: lab-proxy
+    service: proxy
+    image: nginx:1.27.2
+    exposure: internet
+    criticality: 2
+    notes: Edge reverse proxy.
+  - id: lab-postgres
+    service: postgres
+    image: postgres:16.4
+    exposure: internal
+    criticality: 3
+    notes: Primary database; holds the most sensitive data.
+  - id: lab-redis
+    service: redis
+    image: redis:7.4.1
+    exposure: internal
+    criticality: 2
+    notes: Cache and job queue.
+  - id: lab-grafana
+    service: grafana
+    image: grafana/grafana:11.3.0
+    exposure: internal
+    criticality: 1
+    notes: Dashboards.
+  - id: lab-worker
+    service: worker
+    image: python:3.12.7-slim-bookworm
+    exposure: internal
+    criticality: 2
+    notes: Background worker.
+
+  # planted
+  - id: lab-solr
+    service: solr
+    image: solr:8.11.0
+    exposure: internal
+    criticality: 2
+    notes: Search index.
+  - id: lab-httpd-legacy
+    service: httpd-legacy
+    image: httpd:2.4.49
+    exposure: internet
+    criticality: 2
+    notes: Legacy marketing site.
+  - id: lab-tomcat-legacy
+    service: tomcat-legacy
+    image: tomcat:9.0.30
+    exposure: internal
+    criticality: 1
+    notes: Legacy internal app server.
+  - id: lab-couchdb
+    service: couchdb
+    image: couchdb:3.2.1
+    exposure: internal
+    criticality: 2
+    notes: Document store.
+  - id: lab-jenkins
+    service: jenkins
+    image: jenkins/jenkins:2.441
+    exposure: internet
+    criticality: 3
+    notes: CI server; holds deploy credentials.
+  - id: lab-php-fpm
+    service: php-fpm
+    image: php:7.3.10-fpm
+    exposure: internal
+    criticality: 1
+    notes: PHP backend behind the proxy.
+
+  # controls
+  - id: lab-httpd-patched
+    service: httpd-patched
+    image: httpd:2.4.51
+    exposure: internet
+    criticality: 2
+    notes: Patched httpd.
+  - id: lab-solr-patched
+    service: solr-patched
+    image: solr:8.11.1
+    exposure: internal
+    criticality: 2
+    notes: Patched Solr.

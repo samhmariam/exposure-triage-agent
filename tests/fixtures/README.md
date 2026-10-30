@@ -28,3 +28,14 @@ recorded once and trimmed. Edit them only by re-recording, and update this file 
   tests from copies, so these files stay real.
 - Worth knowing: Log4Shell (CVE-2021-44228) states its ranges in `changes[]`, and its `lessThan`
   is the non-version `"log4j-core*"`.
+
+## sbom/httpd-2.4.49.cdx.json
+
+- Source: `uv run python lab/gen_sboms.py httpd-legacy`, i.e. Syft 1.18.1 (`anchore/syft:v1.18.1`)
+  scanning `httpd:2.4.49@sha256:dcba0d12…` from the registry, CycloneDX 1.6 JSON
+- Recorded: 2026-10-30
+- Trimmed from 112 to 5 components, otherwise verbatim: the binary-classifier `httpd` finding
+  (`pkg:generic/httpd@2.4.49`), the `debian 10` operating-system component, and three deb packages
+  chosen for awkward versions (`adduser`; `libssl1.1` with a `%2B`-encoded `+deb10u7` and an
+  `upstream=` qualifier; `bsdutils` with epoch `1:`). Per-file `syft:location:*` properties and
+  dependencies on removed components were dropped.

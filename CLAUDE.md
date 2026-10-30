@@ -40,6 +40,8 @@ exposure) is worse than a false positive.
 - Format: `uv run ruff format`
 - Feeds: `uv run triage feeds refresh [--force]` (network: CISA KEV + FIRST EPSS + CVE records),
   `uv run triage feeds stats`, `uv run triage feeds coverage`
+- Lab SBOMs: `make sboms` (or `uv run python lab/gen_sboms.py [service ...]`; needs Docker, pulls
+  images). Lab estate in `lab/`; `lab/PLANTED.md` is an answer key: don't consult it while matching.
 
 Run tests and lint before declaring any task done.
 

@@ -13,6 +13,17 @@ Template:
 
 ---
 
+## 2026-10-30: Lab estate and SBOMs
+
+- Syft saw every planted component, including two that exist only as compiled binaries (httpd,
+  php-fpm, as `pkg:generic`). 13 images gave 3,261 components in 7 minutes from the registry.
+- "Found" is not "matchable". Syft guessed Tomcat's Maven coordinates
+  (`org.apache.tomcat-catalina/catalina`). CouchDB's deb version `3.2.1-1~bullseye` sorts *above*
+  the CNA bound `3.2.1` under Debian rules, which would give a false negative. Go stdlib versions
+  (`go1.23.1`) disagree with their own purls.
+- Verifying each plant in the real SBOM before writing the answer key caught details my plan had
+  only assumed (the exact purls and the deb revision).
+
 ## 2026-10-30: Ranking signal and enrichment source
 
 - I rank by real-world exploitation first, and I work from CNA records because NVD no longer

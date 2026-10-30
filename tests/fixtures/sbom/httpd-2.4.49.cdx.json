@@ -1,0 +1,291 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:bc00b468-80f8-4296-baf8-be615a3ae295",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-30T11:28:01Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "syft",
+          "version": "1.18.1"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "2862c33031521df0",
+      "type": "container",
+      "name": "httpd",
+      "version": "2.4.49"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:generic/httpd@2.4.49?package-id=f99bf11b13ca6bad",
+      "type": "application",
+      "name": "httpd",
+      "version": "2.4.49",
+      "cpe": "cpe:2.3:a:apache:http_server:2.4.49:*:*:*:*:*:*:*",
+      "purl": "pkg:generic/httpd@2.4.49",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "binary-classifier-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "binary"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "binary-signature"
+        }
+      ]
+    },
+    {
+      "bom-ref": "os:debian@10",
+      "type": "operating-system",
+      "name": "debian",
+      "version": "10",
+      "description": "Debian GNU/Linux 10 (buster)",
+      "swid": {
+        "tagId": "debian",
+        "name": "debian",
+        "version": "10"
+      },
+      "externalReferences": [
+        {
+          "url": "https://bugs.debian.org/",
+          "type": "issue-tracker"
+        },
+        {
+          "url": "https://www.debian.org/",
+          "type": "website"
+        },
+        {
+          "url": "https://www.debian.org/support",
+          "comment": "support",
+          "type": "other"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:distro:id",
+          "value": "debian"
+        },
+        {
+          "name": "syft:distro:prettyName",
+          "value": "Debian GNU/Linux 10 (buster)"
+        },
+        {
+          "name": "syft:distro:versionCodename",
+          "value": "buster"
+        },
+        {
+          "name": "syft:distro:versionID",
+          "value": "10"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/adduser@3.118?arch=all&distro=debian-10&package-id=ba5e368fb6867fe2",
+      "type": "library",
+      "publisher": "Debian Adduser Developers <adduser@packages.debian.org>",
+      "name": "adduser",
+      "version": "3.118",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:adduser:adduser:3.118:*:*:*:*:*:*:*",
+      "purl": "pkg:deb/debian/adduser@3.118?arch=all&distro=debian-10",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "dpkg-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "deb"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "dpkg-db-entry"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "849"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/libssl1.1@1.1.1d-0%2Bdeb10u7?arch=amd64&distro=debian-10&package-id=ec4422a3fb1bc63a&upstream=openssl",
+      "type": "library",
+      "publisher": "Debian OpenSSL Team <pkg-openssl-devel@lists.alioth.debian.org>",
+      "name": "libssl1.1",
+      "version": "1.1.1d-0+deb10u7",
+      "cpe": "cpe:2.3:a:libssl1.1:libssl1.1:1.1.1d-0\\+deb10u7:*:*:*:*:*:*:*",
+      "purl": "pkg:deb/debian/libssl1.1@1.1.1d-0%2Bdeb10u7?arch=amd64&distro=debian-10&upstream=openssl",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "dpkg-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "deb"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "dpkg-db-entry"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "4078"
+        },
+        {
+          "name": "syft:metadata:source",
+          "value": "openssl"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/debian/bsdutils@1:2.33.1-0.1?arch=amd64&distro=debian-10&package-id=362db67d7f2000ca&upstream=util-linux%402.33.1-0.1",
+      "type": "library",
+      "publisher": "LaMont Jones <lamont@debian.org>",
+      "name": "bsdutils",
+      "version": "1:2.33.1-0.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "BSD-4-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-3.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.1-only"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-2.1-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-3.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-3.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "MIT"
+          }
+        },
+        {
+          "license": {
+            "name": "LGPL"
+          }
+        },
+        {
+          "license": {
+            "name": "public-domain"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:bsdutils:bsdutils:1\\:2.33.1-0.1:*:*:*:*:*:*:*",
+      "purl": "pkg:deb/debian/bsdutils@1:2.33.1-0.1?arch=amd64&distro=debian-10&upstream=util-linux%402.33.1-0.1",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "dpkg-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "deb"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "dpkg-db-entry"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "293"
+        },
+        {
+          "name": "syft:metadata:source",
+          "value": "util-linux"
+        },
+        {
+          "name": "syft:metadata:sourceVersion",
+          "value": "2.33.1-0.1"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:deb/debian/adduser@3.118?arch=all&distro=debian-10&package-id=ba5e368fb6867fe2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/bsdutils@1:2.33.1-0.1?arch=amd64&distro=debian-10&package-id=362db67d7f2000ca&upstream=util-linux%402.33.1-0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:deb/debian/libssl1.1@1.1.1d-0%2Bdeb10u7?arch=amd64&distro=debian-10&package-id=ec4422a3fb1bc63a&upstream=openssl",
+      "dependsOn": []
+    }
+  ]
+}

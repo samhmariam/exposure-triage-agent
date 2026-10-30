@@ -1,0 +1,83 @@
+# Lab estate for exposure triage. See lab/inventory.yaml (exposure, criticality) and
+# lab/PLANTED.md (deliberately vulnerable services: the answer key).
+#
+# Images are pinned by tag AND digest, so a rebuilt tag can never change what we scan.
+# SBOM generation (`make sboms`) reads images from the registry and never needs these containers
+# running. Every published port binds to 127.0.0.1 only.
+#
+#   docker compose -f lab/docker-compose.yml up -d                        # benign services only
+#   docker compose -f lab/docker-compose.yml --profile vulnerable up -d   # + planted and controls
+#
+# Services in the `vulnerable` profile are genuinely exploitable (e.g. Log4Shell RCE). Start them
+# only when you need them, and stop them afterwards.
+
+name: triage-lab
+
+services:
+  # --- benign: current at pin time (2024), no deliberate plants ---------------------------------
+  proxy:
+    image: nginx:1.27.2@sha256:bc5eac5eafc581aeda3008b4b1f07ebba230de2f27d47767129a6a905c84f470
+    ports: ["127.0.0.1:8000:80"]
+
+  postgres:
+    image: postgres:16.4@sha256:e62fbf9d3e2b49816a32c400ed2dba83e3b361e6833e624024309c35d334b412
+    environment:
+      POSTGRES_PASSWORD: lab-only-not-a-secret
+    ports: ["127.0.0.1:5432:5432"]
+
+  redis:
+    image: redis:7.4.1@sha256:bb142a9c18ac18a16713c1491d779697b4e107c22a97266616099d288237ef47
+    ports: ["127.0.0.1:6379:6379"]
+
+  grafana:
+    image: grafana/grafana:11.3.0@sha256:a0f881232a6fb71a0554a47d0fe2203b6888fe77f4cefb7ea62bed7eb54e13c3
+    ports: ["127.0.0.1:3000:3000"]
+
+  worker:
+    image: python:3.12.7-slim-bookworm@sha256:60d9996b6a8a3689d36db740b49f4327be3be09a21122bd02fb8895abb38b50d
+    command: ["sleep", "infinity"]
+
+  # --- planted: deliberately vulnerable (see PLANTED.md) -----------------------------------------
+  solr:
+    image: solr:8.11.0@sha256:66fe2feeba8c4afdea12c78a4f11218fadd81befc43f223a2f9267bf605a25d1
+    profiles: ["vulnerable"]
+    ports: ["127.0.0.1:8983:8983"]
+
+  httpd-legacy:
+    image: httpd:2.4.49@sha256:dcba0d12e2362fb0c50ec524ae8aa1cca4a4ba7216617a57e7bbca20767e79cc
+    profiles: ["vulnerable"]
+    ports: ["127.0.0.1:8049:80"]
+
+  tomcat-legacy:
+    image: tomcat:9.0.30@sha256:cba009c0ef8cec83df8178cf4f4668170bdb02440e4c7c576fc397e477c715d3
+    profiles: ["vulnerable"]
+    ports: ["127.0.0.1:8090:8080"] # HTTP only; the AJP connector (8009) is deliberately not published
+
+  couchdb:
+    image: couchdb:3.2.1@sha256:37a7a9aab050c8c376b012d9c52da58e2c94d221b0eb5567edb88d8ceca096ee
+    profiles: ["vulnerable"]
+    environment:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: lab-only-not-a-secret
+    ports: ["127.0.0.1:5984:5984"]
+
+  jenkins:
+    image: jenkins/jenkins:2.441@sha256:6bb8ea0eda544dddee8b3794936bd239e77281d59cce0f76586fa2c262e056f8
+    profiles: ["vulnerable"]
+    ports: ["127.0.0.1:8080:8080"]
+
+  php-fpm:
+    image: php:7.3.10-fpm@sha256:3405ecb4e90b887a246650f0cffe3d2d54359d6f89af094d85fab97e3375d64a
+    profiles: ["vulnerable"]
+    # FastCGI (9000) stays on the compose network; nothing is published.
+
+  # --- controls: fixed versions just past the boundary -------------------------------------------
+  httpd-patched:
+    image: httpd:2.4.51@sha256:0c8dd1d9f90f0da8a29a25dcc092aed76b09a1c9e5e6e93c8db3903c8ce6ef29
+    profiles: ["vulnerable"]
+    ports: ["127.0.0.1:8051:80"]
+
+  solr-patched:
+    image: solr:8.11.1@sha256:8c5f7881cebb283d8230203db2083eef2a64d604d0f6020d74de63e2645f0aec
+    profiles: ["vulnerable"]
+    ports: ["127.0.0.1:8984:8983"]
