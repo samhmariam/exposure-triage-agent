@@ -13,6 +13,11 @@ Template:
 
 ---
 
+## 2026-10-30: Ranking signal and enrichment source
+
+- I rank by real-world exploitation first, and I work from CNA records because NVD no longer
+  enriches most CVEs.
+
 ## 2026-10-29: CVE records for KEV, and how much structure they carry
 
 - Real coverage over all 1,762 KEV CVEs (CNA `affected` only): 845 (48%) have usable version data,
