@@ -13,6 +13,56 @@ Template:
 
 ---
 
+## 2026-10-30: Confidence intervals for a proportion, and sizing an eval
+
+- **Use the Wilson interval** for accuracy, recall and similar proportions (k correct out of n),
+  with z = 1.96 for 95%:
+
+  ```
+  p = k / n
+  center = (p + z²/2n) / (1 + z²/n)
+  margin = z · √( p(1−p)/n + z²/4n² ) / (1 + z²/n)
+  CI     = [center − margin, center + margin]
+  ```
+
+  The simpler Wald interval, p ± z·√(p(1−p)/n), breaks at small n and near 0% or 100%. For 6/8 it
+  gives [45%, 105%], and for 0/50 it gives [0%, 0%].
+- **Worked examples** (checked in Python):
+
+  | Result | Wilson 95% CI | Width |
+  |---|---|---|
+  | 40/50 (80%) | [67.0%, 88.8%] | 21.8 pts |
+  | 120/150 (80%) | [72.9%, 85.6%] | 12.7 pts |
+  | 45/50 (90%) | [78.6%, 95.7%] | 17.0 pts |
+  | 6/8 (Grype on the lab plants) | [40.9%, 92.9%] | 51.9 pts |
+  | 0/50 (no misses) | [0.0%, 7.1%] | 7.1 pts |
+
+- **Width shrinks with 1/√n.** 3× the data makes the interval about 1.73× narrower (21.8 → 12.7).
+  Halving the width takes 4× the data.
+- **Sample size for a target margin E**, from the normal approximation. Round up, and use a pessimistic p:
+
+  ```
+  n ≈ z² · p(1−p) / E²
+  ```
+
+  | Expected p | Margin E | n needed |
+  |---|---|---|
+  | 0.90 | ±5 pts | 139 |
+  | 0.80 | ±5 pts | 246 |
+  | 0.50 (worst case) | ±5 pts | 385 |
+  | 0.90 | ±2.5 pts | 554 |
+
+  If p is unknown, use 0.5, which gives the largest n. Halving E quadruples n.
+- **Claiming a target means checking the lower bound.** 45/50 = 90% does *not* show "above 85%",
+  because the lower bound is 78.6%. To show it, the lower bound must clear 85%: plan for somewhat
+  more than the n above, and state targets in terms of the lower bound.
+- **Zero failures isn't zero risk.** With 0 misses in n, the 95% upper bound is about 3/n (the "rule
+  of three"): 6% for n = 50 (Wilson gives 7.1%). "No missed exposures in 50 cases" still allows a
+  miss rate of a few percent.
+- **What this means for our evals:** the 8 lab plants are test cases that show *which* failures
+  happen and why. They can't measure a rate. Per-stratum results need their own intervals: a
+  stratum of about 42 items has a margin of about ±13 points.
+
 ## 2026-10-30: Claude Code hooks
 
 - PreToolUse blocks (exit 2, stderr goes back to Claude); PostToolUse can't undo anything but feeds
